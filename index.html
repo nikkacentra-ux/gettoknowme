@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ms. Nikka Centra - 3D Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --primary: #6c5ce7;
+            --primary-shadow: #4a3e9c;
+            --primary-light: #8e7dfa;
+            
+            --bot-bubble: #00cec9;
+            --bot-shadow: #009995;
+            --bot-light: #55efc4;
+
+            --user-bubble: #fd79a8;
+            --user-shadow: #e84393;
+            --user-light: #ff9eba;
+
+            --box-bg: #dfe6e9;
+            --text-main: #2d3436;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% -20%, #2a2a4a, #1a1a2e);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* 3D Container */
+        .chat-container {
+            width: 100%;
+            max-width: 450px;
+            height: 85vh;
+            background: var(--box-bg);
+            border-radius: 40px;
+            border: 4px solid #fff;
+            /* 3D Extrusion & Soft Shadow */
+            box-shadow: 
+                inset -5px -5px 15px rgba(0,0,0,0.1),
+                inset 5px 5px 15px rgba(255,255,255,0.8),
+                0 15px 0 #b2bec3,
+                0 25px 30px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transform: perspective(800px) rotateX(2deg);
+            transition: transform 0.3s ease;
+        }
+
+        /* 3D Header */
+        .chat-header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 36px 36px 15px 15px;
+            border: 3px solid #fff;
+            box-shadow: 
+                inset 2px 2px 5px var(--primary-light),
+                inset -3px -3px 8px var(--primary-shadow),
+                0 8px 0 var(--primary-shadow),
+                0 12px 10px rgba(0,0,0,0.2);
+            margin: -2px -2px 10px -2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 10;
+        }
+
+        /* 3D Avatar Orbit Animation */
+        .avatar-container {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ffeaa7;
+            border: 3px solid #fff;
+            box-shadow: 
+                inset -3px -3px 6px #fdcb6e,
+                inset 3px 3px 6px #fff,
+                0 5px 0 #fdcb6e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            transform-style: preserve-3d;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(-5deg); }
+            50% { transform: translateY(-5px) rotate(5deg); }
+        }
+
+        /* Chat Area */
+        .chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar Styling for 3D feel */
+        .chat-box::-webkit-scrollbar { width: 8px; }
+        .chat-box::-webkit-scrollbar-track { background: transparent; }
+        .chat-box::-webkit-scrollbar-thumb { 
+            background: #b2bec3; 
+            border-radius: 10px; 
+            border: 2px solid var(--box-bg);
+        }
+
+        /* 3D Chat Bubbles */
+        .message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.4;
+            position: relative;
+            opacity: 0;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border: 2px solid #fff;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: var(--bot-bubble);
+            color: #1a4f4d;
+            border-bottom-left-radius: 5px;
+            box-shadow: 
+                inset 2px 2px 5px var(--bot-light),
+                inset -2px -2px 5px rgba(0,0,0,0.1),
+                0 6px 0 var(--bot-shadow),
+                0 8px 8px rgba(0,0,0,0.15);
+            margin-bottom: 6px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--user-bubble);
+            color: #fff;
+            border-bottom-right-radius: 5px;
+            box-shadow: 
+                inset 2px 2px 5px var(--user-light),
+                inset -2px -2px 5px rgba(0,0,0,0.1),
+                0 6px 0 var(--user-shadow),
+                0 8px 8px rgba(0,0,0,0.15);
+            margin-bottom: 6px;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 0 0 35px 35px;
+            border-top: 2px solid #fff;
+        }
+
+        /* 3D Input Field */
+        .chat-input {
+            flex-grow: 1;
+            padding: 12px 20px;
+            border-radius: 25px;
+            border: 3px solid #fff;
+            background: #fff;
+            color: var(--text-main);
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            outline: none;
+            box-shadow: 
+                inset 3px 3px 6px rgba(0,0,0,0.1),
+                inset -3px -3px 6px rgba(255,255,255,1);
+            transition: all 0.2s;
+        }
+
+        .chat-input:focus {
+            box-shadow: 
+                inset 4px 4px 8px rgba(0,0,0,0.15),
+                inset -4px -4px 8px rgba(255,255,255,1),
+                0 0 0 4px rgba(108, 92, 231, 0.3);
+        }
+
+        /* 3D Send Button */
+        .send-btn {
+            background: #ffeaa7;
+            border: 3px solid #fff;
+            width: 50px;
+            height: 50px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 
+                inset 2px 2px 5px #fff,
+                inset -2px -2px 5px #fdcb6e,
+                0 6px 0 #fdcb6e,
+                0 8px 10px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+        }
+
+        .send-btn:active {
+            transform: translateY(6px);
+            box-shadow: 
+                inset 2px 2px 5px #fff,
+                inset -2px -2px 5px #fdcb6e,
+                0 0px 0 #fdcb6e,
+                0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .send-btn svg {
+            fill: #d35400;
+            width: 24px;
+            height: 24px;
+            transform: translateX(2px);
+        }
+
+        /* Typing Indicator */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 15px 20px;
+            align-items: center;
+            width: max-content;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #1a4f4d;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="chat-container mx-4">
+        <div class="chat-header">
+            <div class="avatar-container">
+                👩‍🔬
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold font-heading leading-tight text-white drop-shadow-md">Nikka Centra DB</h2>
+                <p class="text-sm font-semibold opacity-90 text-indigo-100">Ask about her life & secrets!</p>
+            </div>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+            <!-- Messages will appear here -->
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" class="chat-input" placeholder="Ask about Nikka..." autocomplete="off">
+            <button id="send-btn" class="send-btn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- RANDOMIZED LORE DATABASE ---
+        const nikkaData = {
+            professions: [
+                "Quantum Botanist who grows plants that exist in two places at once",
+                "Time-traveling Barista serving coffee before you even order it",
+                "Cybernetic Fashion Designer making clothes out of hard light",
+                "Chief Chaos Officer at a multi-dimensional startup",
+                "Freelance Dragon Tamer and part-time DJ",
+                "Intergalactic Food Critic who specializes in asteroid truffles"
+            ],
+            hobbies: [
+                "juggling miniature black holes on weekends",
+                "knitting custom sweaters for deep-sea giant squids",
+                "having competitive staring contests with ancient statues",
+                "baking soufflés using the thermal energy of active volcanoes",
+                "translating cat meows into Shakespearean sonnets",
+                "collecting vintage meteorites from the Andromeda galaxy"
+            ],
+            inventions: [
+                "the Anti-Gravity Toaster (bread never hits the floor)",
+                "a perfume that literally smells like the concept of 'Tuesday'",
+                "Hover-shoes made entirely from recycled rainclouds",
+                "an alarm clock that negotiates with you to wake up",
+                "a pen that writes in invisible ink that only cats can see",
+                "the self-eating watermelon"
+            ],
+            secrets: [
+                "she is actually 300 years old, but moisturizes with stardust",
+                "she accidentally invented the color 'blurple' during a sneezing fit",
+                "her pet iguana, Bartholomew, is actually her boss",
+                "she once won a marathon by pausing time and walking",
+                "she doesn't have a shadow; it quit because it couldn't keep up with her",
+                "she funds her experiments by selling tap water to aliens"
+            ],
+            locations: [
+                "a floating steampunk castle above the clouds of Jupiter",
+                "a hollowed-out volcano with excellent Wi-Fi",
+                "an underwater dome shaped like a giant teacup",
+                "a cozy apartment located exactly between yesterday and tomorrow",
+                "a mobile laboratory disguised as a vintage ice cream truck"
+            ]
+        };
+
+        // Helper to pick random item
+        const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+        // Chat Elements
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // Initial Greeting
+        setTimeout(() => {
+            addMessage("bot", "Hello! I am the Nikka Centra Database. Ask me about her profession, hobbies, inventions, location, or her deepest secrets!");
+        }, 500);
+
+        // Send logic
+        function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+            
+            addMessage("user", text);
+            userInput.value = "";
+            
+            showTyping();
+            
+            setTimeout(() => {
+                removeTyping();
+                const response = generateResponse(text);
+                addMessage("bot", response);
+            }, 1000 + Math.random() * 1000); // Random delay between 1-2s for realism
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        function addMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            msgDiv.textContent = text;
+            chatBox.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot typing';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+            chatBox.appendChild(typingDiv);
+            scrollToBottom();
+        }
+
+        function removeTyping() {
+            const typingDiv = document.getElementById('typing-indicator');
+            if (typingDiv) typingDiv.remove();
+        }
+
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Logic to generate randomized responses based on keywords
+        function generateResponse(input) {
+            input = input.toLowerCase();
+            
+            if (input.includes("who") || input.includes("profession") || input.includes("do") || input.includes("job")) {
+                return `Currently, Ms. Nikka Centra is working as a ${getRandom(nikkaData.professions)}!`;
+            }
+            if (input.includes("hobby") || input.includes("free time") || input.includes("fun") || input.includes("likes")) {
+                return `When she's not working, you can usually find her ${getRandom(nikkaData.hobbies)}. It's highly unusual!`;
+            }
+            if (input.includes("invent") || input.includes("create") || input.includes("made") || input.includes("machine")) {
+                return `Her most famous creation to date is definitely ${getRandom(nikkaData.inventions)}.`;
+            }
+            if (input.includes("secret") || input.includes("hide") || input.includes("fact") || input.includes("tell me more")) {
+                return `Well, I shouldn't say this, but... rumor has it that ${getRandom(nikkaData.secrets)}!`;
+            }
+            if (input.includes("where") || input.includes("live") || input.includes("location") || input.includes("base")) {
+                return `She constantly moves, but her primary residence is currently ${getRandom(nikkaData.locations)}.`;
+            }
+            if (input.includes("hi") || input.includes("hello") || input.includes("hey")) {
+                return "Greetings! What would you like to know about the magnificent Ms. Nikka Centra?";
+            }
+
+            // Fallback
+            const fallbacks = [
+                "Fascinating, isn't it? Try asking me about her hobbies, inventions, or where she lives!",
+                "I don't have that specific data, but did you know she once invented something amazing? Ask me about her inventions!",
+                "My data banks are confused by that. Ask me for a secret about her instead!"
+            ];
+            return getRandom(fallbacks);
+        }
+    </script>
+</body>
+</html>
